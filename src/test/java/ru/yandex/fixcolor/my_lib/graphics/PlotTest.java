@@ -29,7 +29,7 @@ public class PlotTest  {
             }
         }
         //
-        plot = new Plot(canvas, 300, 30);
+        plot = new Plot(canvas, 0, 0);
         plot.clearPlot();
         //
         while (nit.isAlive()) {

@@ -18,7 +18,7 @@ public class Plot {
     // цвет: полей, окно для графика
     private Color colorField = Color.BLACK;
     private Color colorWindow = Color.BLACK;
-    private Color colorWindowNet = Color.GREEN;
+    private Color colorWindowNet = Color.DARKGREEN;
     // массив графиков
     private Vector<Trend>   trends = null;
 
@@ -45,8 +45,31 @@ public class Plot {
         }
         // рисование сетки
         {
-
+            gc.setStroke(colorWindowNet);
+            gc.setLineWidth(1);
+            double poluWidth = gc.getLineWidth() / 2;
+            int ySize = height - fieldHeight;
+            int xSize = width - fieldWidth;
+            int yN = 10, xN = 12;
+            int y, x;
+            for (int i = 1; i < (yN - 1); i++) {
+                y = (i * ySize / (yN - 1)) + fieldHeight;
+                moveTo(fieldWidth + poluWidth, y);
+                lineTo(width - poluWidth, y);
+            }
+            for (int i = 1; i < (xN - 1); i++) {
+                x = (i * xSize / (xN - 1)) + fieldWidth;
+                moveTo(x, fieldHeight + poluWidth);
+                lineTo(x, fieldHeight + ySize - poluWidth);
+            }
+            gc.stroke();
         }
+    }
+    private void moveTo(double x, double y) {
+        gc.moveTo(x, height - y);
+    }
+    private void lineTo(double x, double y) {
+        gc.lineTo(x, height - y);
     }
     // ---------------
     private class Trend {
