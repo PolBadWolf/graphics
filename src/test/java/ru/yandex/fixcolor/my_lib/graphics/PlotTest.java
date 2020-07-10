@@ -29,8 +29,9 @@ public class PlotTest  {
             }
         }
         //
-        plot = new Plot(canvas, 0, 0);
+        plot = new Plot(canvas, 100, 50);
         plot.clearPlot();
+        plot.clearFields();
         //
         while (nit.isAlive()) {
             try {
