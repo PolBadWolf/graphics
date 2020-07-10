@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-
 import java.util.Vector;
 
 public class Plot {
@@ -41,6 +40,10 @@ public class Plot {
 
     // массив графиков
     private Vector<Trend>   trends = null;
+    private Vector<Short>   dataX = null;
+    private short           dataXtmp = 0;
+    private double[]        trX = null;
+    private Object objSynh = null;
 
     public Plot(Canvas canvas, int fieldWidth, int fieldHeight) {
         this.canvas = canvas;
@@ -50,6 +53,8 @@ public class Plot {
         height = (int)canvas.getHeight();
         gc = canvas.getGraphicsContext2D();
         trends = new Vector<>();
+        dataX = new Vector<>();
+        objSynh = new Object();
     }
     // ---------------
     public void setFieldBackColor(Color color) { fieldBackColor = color; }
@@ -120,7 +125,7 @@ public class Plot {
             //((Parent)canvas.getParent()).ch
         });
     }
-    public void clearPlot() {
+    public void clearWindow() {
         Platform.runLater(() -> {
             gc.beginPath();
             // очистка окна
@@ -158,6 +163,47 @@ public class Plot {
         });
     }
     // ---------------
+    public void removeAllTrends() {
+        trends.clear();
+    }
+    public void addTrend(Color lineColor, double lineWidth) {
+        Thread thread = new Thread();
+    }
+    public void clearAllTrends() {
+        synchronized (objSynh) {
+            for (int i = 0; i < trends.size(); i++) {
+                trends.get(i).clearData();
+            }
+            dataX.clear();
+        }
+    }
+    public void newDataX(short dataX) {
+        dataXtmp = dataX;
+    }
+    public void newDataTrend(int n, short data) {
+        trends.get(n).newData(data);
+    }
+    public void newDataPush() {
+        synchronized (objSynh) {
+            dataX.add(dataXtmp);
+            for (int i = 0; i < trends.size(); i++) {
+                trends.get(i).newDataPush();
+            }
+        }
+    }
+    public void rePaint() {
+        synchronized (objSynh) {
+            trX = new double[dataX.size()];
+            for (int i = 0; i < dataX.size(); i++) {
+                trX[i] = dataX.get(i).doubleValue() / 1.0;
+            }
+            clearWindow();
+            for (int i = 0; i < trends.size(); i++) {
+                trends.get(i).rePaint();
+            }
+        }
+    }
+    // ---------------
     private void moveTo(double x, double y) {
         gc.moveTo(x, height - y);
     }
@@ -166,10 +212,40 @@ public class Plot {
     }
     // ---------------
     private class Trend {
-        private Color colorTrend = null;
+        private Color lineColor = null;
+        private double lineWidth = 0.0;
+        Vector<Short> data = null;
+        short dataTmp = 0;
 
-        public Trend(Color colorTrend) {
-            this.colorTrend = colorTrend;
+        public Trend(Color lineColor, double lineWidth) {
+            this.lineColor = lineColor;
+            this.lineWidth = lineWidth;
+            data = new Vector<>();
+        }
+
+        public void clearData() {
+            data.clear();
+        }
+
+        public void newData(short data) {
+            dataTmp = data;
+        }
+
+        public void newDataPush() {
+            data.add(dataTmp);
+        }
+
+        public void rePaint() {
+            double[] trY = new double[trX.length];
+            for (int i = 0; i < trX.length; i++) {
+                trY[i] = data.get(i).doubleValue() / 1.0;
+            }
+            gc.beginPath();
+            gc.setStroke(lineColor);
+            gc.setLineWidth(lineWidth);
+            gc.strokePolyline(trX, trY, trX.length);
+            gc.closePath();
+            gc.stroke();
         }
     }
     // ---------------

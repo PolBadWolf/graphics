@@ -30,7 +30,7 @@ public class PlotTest  {
         }
         //
         plot = new Plot(canvas, 100, 50);
-        plot.clearPlot();
+        plot.clearWindow();
         plot.clearFields();
         //
         while (nit.isAlive()) {
