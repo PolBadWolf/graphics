@@ -146,26 +146,29 @@ public class Plot {
             gc.setFill(windowBackColor);
             gc.fillRect(xB, yB, xE, yE);
         }
+        gc.closePath();
+        gc.stroke();
+    }
+    private void _paintNet() {
+        gc.beginPath();
         // рисование сетки
-        {
-            gc.setStroke(netLineColor);
-            gc.setLineWidth(netLineWidth);
-            double poluWidth = netLineWidth / 2;
-            int ySize = height - fieldHeight;
-            int xSize = width - fieldWidth;
-            int xN = netN_Width + 1;
-            int yN = netN_Height + 1;
-            int y, x;
-            for (int i = 1; i < (yN - 1); i++) {
-                y = (i * ySize / (yN - 1)) + fieldHeight;
-                moveTo(fieldWidth + poluWidth, y);
-                lineTo(width - poluWidth, y);
-            }
-            for (int i = 1; i < (xN - 1); i++) {
-                x = (i * xSize / (xN - 1)) + fieldWidth;
-                moveTo(x, fieldHeight + poluWidth);
-                lineTo(x, fieldHeight + ySize - poluWidth);
-            }
+        gc.setStroke(netLineColor);
+        gc.setLineWidth(netLineWidth);
+        double poluWidth = netLineWidth / 2;
+        int ySize = height - fieldHeight;
+        int xSize = width - fieldWidth;
+        int xN = netN_Width + 1;
+        int yN = netN_Height + 1;
+        int y, x;
+        for (int i = 1; i < (yN - 1); i++) {
+            y = (i * ySize / (yN - 1)) + fieldHeight;
+            moveTo(fieldWidth + poluWidth, y);
+            lineTo(width - poluWidth, y);
+        }
+        for (int i = 1; i < (xN - 1); i++) {
+            x = (i * xSize / (xN - 1)) + fieldWidth;
+            moveTo(x, fieldHeight + poluWidth);
+            lineTo(x, fieldHeight + ySize - poluWidth);
         }
         gc.closePath();
         gc.stroke();
@@ -252,6 +255,7 @@ public class Plot {
                 Platform.runLater(() -> {
                     _clearFields();
                     _clearWindow();
+                    _paintNet();
                     for (int i = 0; i < trends.size(); i++) {
                         trends.get(i).rePaint();
                     }
