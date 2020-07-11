@@ -42,6 +42,7 @@ public class PlotTest  {
         plot.newDataX((short) 500); plot.newDataTrend(0, (short)500); plot.newDataPush();
         plot.newDataX((short) 900); plot.newDataTrend(0, (short)300); plot.newDataPush();
         plot.newDataX((short) 1000); plot.newDataTrend(0, (short)150); plot.newDataPush();
+        plot.setZoomX(-200, 1000);
         plot.rePaint();
         try {
             Thread.sleep(3000);

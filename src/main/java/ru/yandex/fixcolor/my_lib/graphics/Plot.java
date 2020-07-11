@@ -244,7 +244,7 @@ public class Plot {
                 double k = timeLenght / (width - fieldWidth);
                 trX = new double[timeIndexEnd - timeIndexBegin];
                 for (int i = 0; i < trX.length; i++) {
-                    trX[i] = (dataX.get(i + timeIndexBegin).doubleValue() / k) + fieldWidth;
+                    trX[i] = ((dataX.get(i + timeIndexBegin).doubleValue() - time0) / k) + fieldWidth;
                 }
             }
             //
