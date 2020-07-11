@@ -90,91 +90,93 @@ public class Plot {
     public double getFieldFrameLineWidth() { return fieldFrameLineWidth; }
     // ---------------
     private void _clearFields() {
-        synchronized (windSynh) {
-            gc.beginPath();
-            // вертикальное поле
-            {
-                int xB = 0;
-                int xE = fieldWidth;
-                int yB = 0;
-                int yE = height;
-                gc.setFill(fieldBackColor);
-                gc.fillRect(xB, yB, xE, yE);
-            }
-            // горизонтальное поле
-            {
-                int xB = 0;
-                int xE = width;
-                int yB = height - fieldHeight;
-                int yE = height;
-                gc.setFill(fieldBackColor);
-                gc.fillRect(xB, yB, xE, yE);
-            }
-            // линия рамки
-            {
-                double[] x = new double[] {
-                        fieldWidth - (fieldFrameLineWidth / 2),
-                        fieldWidth - (fieldFrameLineWidth / 2),
-                        width - (fieldFrameLineWidth / 2)
-                };
-                double[] y = new double[] {
-                        0,
-                        height - fieldHeight + (fieldFrameLineWidth / 2),
-                        height - fieldHeight + (fieldFrameLineWidth / 2)
-                };
-                gc.setStroke(fieldFrameLineColor);
-                gc.setLineWidth(fieldFrameLineWidth);
-                gc.strokePolyline(x, y, x.length);
-            }
-            gc.closePath();
+        gc.beginPath();
+        // вертикальное поле
+        {
+            int xB = 0;
+            int xE = fieldWidth;
+            int yB = 0;
+            int yE = height;
+            gc.setFill(fieldBackColor);
+            gc.fillRect(xB, yB, xE, yE);
         }
+        // горизонтальное поле
+        {
+            int xB = 0;
+            int xE = width;
+            int yB = height - fieldHeight;
+            int yE = height;
+            gc.setFill(fieldBackColor);
+            gc.fillRect(xB, yB, xE, yE);
+        }
+        // линия рамки
+        {
+            double[] x = new double[] {
+                    fieldWidth - (fieldFrameLineWidth / 2),
+                    fieldWidth - (fieldFrameLineWidth / 2),
+                    width - (fieldFrameLineWidth / 2)
+            };
+            double[] y = new double[] {
+                    0,
+                    height - fieldHeight + (fieldFrameLineWidth / 2),
+                    height - fieldHeight + (fieldFrameLineWidth / 2)
+            };
+            gc.setStroke(fieldFrameLineColor);
+            gc.setLineWidth(fieldFrameLineWidth);
+            gc.strokePolyline(x, y, x.length);
+        }
+        gc.closePath();
     }
     private void _clearWindow() {
-        synchronized (windSynh) {
-            gc.beginPath();
-            // очистка окна
-            {
-                int xB = fieldWidth;
-                int xE = width - xB;
-                int yB = 0;
-                int yE = height - fieldHeight;
-                gc.setFill(windowBackColor);
-                gc.fillRect(xB, yB, xE, yE);
-            }
-            // рисование сетки
-            {
-                gc.setStroke(netLineColor);
-                gc.setLineWidth(netLineWidth);
-                double poluWidth = netLineWidth / 2;
-                int ySize = height - fieldHeight;
-                int xSize = width - fieldWidth;
-                int xN = netN_Width + 1;
-                int yN = netN_Height + 1;
-                int y, x;
-                for (int i = 1; i < (yN - 1); i++) {
-                    y = (i * ySize / (yN - 1)) + fieldHeight;
-                    moveTo(fieldWidth + poluWidth, y);
-                    lineTo(width - poluWidth, y);
-                }
-                for (int i = 1; i < (xN - 1); i++) {
-                    x = (i * xSize / (xN - 1)) + fieldWidth;
-                    moveTo(x, fieldHeight + poluWidth);
-                    lineTo(x, fieldHeight + ySize - poluWidth);
-                }
-            }
-            gc.closePath();
+        gc.beginPath();
+        // очистка окна
+        {
+            int xB = fieldWidth;
+            int xE = width - xB;
+            int yB = 0;
+            int yE = height - fieldHeight;
+            gc.setFill(windowBackColor);
+            gc.fillRect(xB, yB, xE, yE);
         }
+        // рисование сетки
+        {
+            gc.setStroke(netLineColor);
+            gc.setLineWidth(netLineWidth);
+            double poluWidth = netLineWidth / 2;
+            int ySize = height - fieldHeight;
+            int xSize = width - fieldWidth;
+            int xN = netN_Width + 1;
+            int yN = netN_Height + 1;
+            int y, x;
+            for (int i = 1; i < (yN - 1); i++) {
+                y = (i * ySize / (yN - 1)) + fieldHeight;
+                moveTo(fieldWidth + poluWidth, y);
+                lineTo(width - poluWidth, y);
+            }
+            for (int i = 1; i < (xN - 1); i++) {
+                x = (i * xSize / (xN - 1)) + fieldWidth;
+                moveTo(x, fieldHeight + poluWidth);
+                lineTo(x, fieldHeight + ySize - poluWidth);
+            }
+        }
+        gc.closePath();
     }
     public void clearFields() {
         (new Thread(()-> {
-            Platform.runLater(()-> {
-                _clearFields();
-            });
+            synchronized (windSynh) {
+                Platform.runLater(()-> {
+                    _clearFields();
+                });
+            }
         })).start();
     }
     public void clearWindow() {
         (new Thread(() -> {
-            Platform.runLater(() -> _clearWindow());
+            synchronized (windSynh) {
+                Platform.runLater(() -> {
+                    _clearWindow();
+                });
+            }
         })).start();
     }
     // ---------------
@@ -193,10 +195,14 @@ public class Plot {
         }
     }
     public void newDataX(short dataX) {
-        dataXtmp = dataX;
+        synchronized (dataSynh) {
+            dataXtmp = dataX;
+        }
     }
     public void newDataTrend(int n, short data) {
-        trends.get(n).newData(data);
+        synchronized (dataSynh) {
+            trends.get(n).newData(data);
+        }
     }
     public void newDataPush() {
         synchronized (dataSynh) {
@@ -214,16 +220,16 @@ public class Plot {
                     trX[i] = dataX.get(i).doubleValue() / 1.0;
                 }
             }
-
+            //
+            synchronized (windSynh) {
+                Platform.runLater(() -> {
+                    _clearWindow();
+                    for (int i = 0; i < trends.size(); i++) {
+                        trends.get(i).rePaint();
+                    }
+                });
+            }
         })).start();
-        clearWindow();
-        synchronized (windSynh) {
-            Platform.runLater(() -> {
-                for (int i = 0; i < trends.size(); i++) {
-                    trends.get(i).rePaint();
-                }
-            });
-        }
     }
     // ---------------
     private void moveTo(double x, double y) {
