@@ -126,6 +126,7 @@ public class Plot {
             gc.strokePolyline(x, y, x.length);
         }
         gc.closePath();
+        gc.stroke();;
     }
     private void _clearWindow() {
         gc.beginPath();
@@ -160,6 +161,7 @@ public class Plot {
             }
         }
         gc.closePath();
+        gc.stroke();
     }
     public void clearFields() {
         (new Thread(()-> {
