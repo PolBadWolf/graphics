@@ -188,7 +188,7 @@ public class Plot {
         trends.clear();
     }
     public void addTrend(Color lineColor, double lineWidth) {
-        Thread thread = new Thread();
+        trends.add(new Trend(lineColor, lineWidth));
     }
     public void clearAllTrends() {
         synchronized (dataSynh) {
@@ -228,6 +228,7 @@ public class Plot {
                     }
                 }
                 // конец
+                timeIndexEnd = dataX.size();
                 for (int i = timeIndexBegin; i < dataX.size(); i++) {
                     if (dataX.get(i).doubleValue() >= (time0 + timeLenght)) {
                         timeIndexEnd = i + 1;
@@ -287,7 +288,7 @@ public class Plot {
         public void rePaint() {
             double[] trY = new double[trX.length];
             for (int i = 0; i < trX.length; i++) {
-                trY[i] = data.get(i + timeIndexBegin).doubleValue() / 1.0;
+                trY[i] = height - (data.get(i + timeIndexBegin).doubleValue() / 1.0);
             }
             gc.beginPath();
             gc.setStroke(lineColor);

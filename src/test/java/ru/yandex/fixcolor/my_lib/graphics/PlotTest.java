@@ -1,6 +1,7 @@
 package ru.yandex.fixcolor.my_lib.graphics;
 
 import javafx.scene.canvas.Canvas;
+import javafx.scene.paint.Color;
 import org.junit.Test;
 
 import java.util.Vector;
@@ -34,6 +35,13 @@ public class PlotTest  {
         plot = new Plot(canvas, 100, 50);
         plot.clearWindow();
         plot.clearFields();
+        //
+        plot.addTrend(Color.YELLOW, 2);
+        plot.newDataX((short) 0); plot.newDataTrend(0, (short)0); plot.newDataPush();
+        plot.newDataX((short) 100); plot.newDataTrend(0, (short)500); plot.newDataPush();
+        plot.newDataX((short) 500); plot.newDataTrend(0, (short)500); plot.newDataPush();
+        plot.newDataX((short) 900); plot.newDataTrend(0, (short)300); plot.newDataPush();
+        plot.rePaint();
         //
         while (nit.isAlive()) {
             try {
