@@ -3,6 +3,8 @@ package ru.yandex.fixcolor.my_lib.graphics;
 import javafx.scene.canvas.Canvas;
 import org.junit.Test;
 
+import java.util.Vector;
+
 public class PlotTest  {
     Thread nit = null;
     Canvas canvas = null;

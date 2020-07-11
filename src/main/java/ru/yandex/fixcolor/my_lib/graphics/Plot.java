@@ -39,8 +39,10 @@ public class Plot {
     private int netN_Height = 10;
     // начало времени отображения
     private double time0 = 0.0;
+    private int timeIndexBegin = 0;
     // длительность отображении времени
     private double timeLenght = 1000.0;
+    private int timeIndexEnd = 0;
 
     // массив графиков
     private Vector<Trend>   trends = null;
@@ -217,9 +219,26 @@ public class Plot {
     public void rePaint() {
         (new Thread( ()-> {
             synchronized (dataSynh) {
-                trX = new double[dataX.size()];
+                Vector<Double> tmp = new Vector<>();
+                // начало
                 for (int i = 0; i < dataX.size(); i++) {
-                    trX[i] = dataX.get(i).doubleValue() / 1.0;
+                    if (dataX.get(i).doubleValue() >= time0) {
+                        timeIndexBegin = i;
+                        break;
+                    }
+                }
+                // конец
+                for (int i = timeIndexBegin; i < dataX.size(); i++) {
+                    if (dataX.get(i).doubleValue() >= (time0 + timeLenght)) {
+                        timeIndexEnd = i + 1;
+                        break;
+                    }
+                }
+                //
+                double k = timeLenght / width;
+                trX = new double[timeIndexEnd - timeIndexBegin];
+                for (int i = 0; i < trX.length; i++) {
+                    trX[i] = dataX.get(i + timeIndexBegin).doubleValue() / k;
                 }
             }
             //
@@ -268,7 +287,7 @@ public class Plot {
         public void rePaint() {
             double[] trY = new double[trX.length];
             for (int i = 0; i < trX.length; i++) {
-                trY[i] = data.get(i).doubleValue() / 1.0;
+                trY[i] = data.get(i + timeIndexBegin).doubleValue() / 1.0;
             }
             gc.beginPath();
             gc.setStroke(lineColor);
