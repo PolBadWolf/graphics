@@ -38,9 +38,17 @@ public class PlotTest  {
         //
         plot.addTrend(Color.YELLOW, 2);
         plot.newDataX((short) 0); plot.newDataTrend(0, (short)0); plot.newDataPush();
-        plot.newDataX((short) 100); plot.newDataTrend(0, (short)500); plot.newDataPush();
+        plot.newDataX((short) 100); plot.newDataTrend(0, (short)400); plot.newDataPush();
         plot.newDataX((short) 500); plot.newDataTrend(0, (short)500); plot.newDataPush();
         plot.newDataX((short) 900); plot.newDataTrend(0, (short)300); plot.newDataPush();
+        plot.newDataX((short) 1000); plot.newDataTrend(0, (short)150); plot.newDataPush();
+        plot.rePaint();
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        plot.setZoomX(0, 3000);
         plot.rePaint();
         //
         while (nit.isAlive()) {

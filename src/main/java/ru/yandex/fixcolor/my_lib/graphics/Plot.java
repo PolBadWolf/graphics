@@ -90,6 +90,11 @@ public class Plot {
     public int getFieldHeight() { return fieldHeight; }
     public Color getFieldFrameLineColor() { return fieldFrameLineColor; }
     public double getFieldFrameLineWidth() { return fieldFrameLineWidth; }
+    //
+    public void setZoomX(double time0, double timeLenght) {
+        this.time0 = time0;
+        this.timeLenght = timeLenght;
+    }
     // ---------------
     private void _clearFields() {
         gc.beginPath();
@@ -236,15 +241,16 @@ public class Plot {
                     }
                 }
                 //
-                double k = timeLenght / width;
+                double k = timeLenght / (width - fieldWidth);
                 trX = new double[timeIndexEnd - timeIndexBegin];
                 for (int i = 0; i < trX.length; i++) {
-                    trX[i] = dataX.get(i + timeIndexBegin).doubleValue() / k;
+                    trX[i] = (dataX.get(i + timeIndexBegin).doubleValue() / k) + fieldWidth;
                 }
             }
             //
             synchronized (windSynh) {
                 Platform.runLater(() -> {
+                    _clearFields();
                     _clearWindow();
                     for (int i = 0; i < trends.size(); i++) {
                         trends.get(i).rePaint();
