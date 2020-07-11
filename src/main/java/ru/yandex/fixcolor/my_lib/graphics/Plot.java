@@ -43,7 +43,8 @@ public class Plot {
     private Vector<Short>   dataX = null;
     private short           dataXtmp = 0;
     private double[]        trX = null;
-    private Object objSynh = null;
+    private Object dataSynh = null;
+    private Object windSynh = null;
 
     public Plot(Canvas canvas, int fieldWidth, int fieldHeight) {
         this.canvas = canvas;
@@ -54,7 +55,8 @@ public class Plot {
         gc = canvas.getGraphicsContext2D();
         trends = new Vector<>();
         dataX = new Vector<>();
-        objSynh = new Object();
+        dataSynh = new Object();
+        windSynh = new Object();
     }
     // ---------------
     public void setFieldBackColor(Color color) { fieldBackColor = color; }
@@ -126,41 +128,43 @@ public class Plot {
         });
     }
     public void clearWindow() {
-        Platform.runLater(() -> {
-            gc.beginPath();
-            // очистка окна
-            {
-                int xB = fieldWidth;
-                int xE = width - xB;
-                int yB = 0;
-                int yE = height - fieldHeight;
-                gc.setFill(windowBackColor);
-                gc.fillRect(xB, yB, xE, yE);
-            }
-            // рисование сетки
-            {
-                gc.setStroke(netLineColor);
-                gc.setLineWidth(netLineWidth);
-                double poluWidth = netLineWidth / 2;
-                int ySize = height - fieldHeight;
-                int xSize = width - fieldWidth;
-                int xN = netN_Width + 1;
-                int yN = netN_Height + 1;
-                int y, x;
-                for (int i = 1; i < (yN - 1); i++) {
-                    y = (i * ySize / (yN - 1)) + fieldHeight;
-                    moveTo(fieldWidth + poluWidth, y);
-                    lineTo(width - poluWidth, y);
+        synchronized (windSynh) {
+            Platform.runLater(() -> {
+                gc.beginPath();
+                // очистка окна
+                {
+                    int xB = fieldWidth;
+                    int xE = width - xB;
+                    int yB = 0;
+                    int yE = height - fieldHeight;
+                    gc.setFill(windowBackColor);
+                    gc.fillRect(xB, yB, xE, yE);
                 }
-                for (int i = 1; i < (xN - 1); i++) {
-                    x = (i * xSize / (xN - 1)) + fieldWidth;
-                    moveTo(x, fieldHeight + poluWidth);
-                    lineTo(x, fieldHeight + ySize - poluWidth);
+                // рисование сетки
+                {
+                    gc.setStroke(netLineColor);
+                    gc.setLineWidth(netLineWidth);
+                    double poluWidth = netLineWidth / 2;
+                    int ySize = height - fieldHeight;
+                    int xSize = width - fieldWidth;
+                    int xN = netN_Width + 1;
+                    int yN = netN_Height + 1;
+                    int y, x;
+                    for (int i = 1; i < (yN - 1); i++) {
+                        y = (i * ySize / (yN - 1)) + fieldHeight;
+                        moveTo(fieldWidth + poluWidth, y);
+                        lineTo(width - poluWidth, y);
+                    }
+                    for (int i = 1; i < (xN - 1); i++) {
+                        x = (i * xSize / (xN - 1)) + fieldWidth;
+                        moveTo(x, fieldHeight + poluWidth);
+                        lineTo(x, fieldHeight + ySize - poluWidth);
+                    }
                 }
-            }
-            gc.closePath();
-            gc.stroke();
-        });
+                gc.closePath();
+                gc.stroke();
+            });
+        }
     }
     // ---------------
     public void removeAllTrends() {
@@ -170,7 +174,7 @@ public class Plot {
         Thread thread = new Thread();
     }
     public void clearAllTrends() {
-        synchronized (objSynh) {
+        synchronized (dataSynh) {
             for (int i = 0; i < trends.size(); i++) {
                 trends.get(i).clearData();
             }
@@ -184,7 +188,7 @@ public class Plot {
         trends.get(n).newData(data);
     }
     public void newDataPush() {
-        synchronized (objSynh) {
+        synchronized (dataSynh) {
             dataX.add(dataXtmp);
             for (int i = 0; i < trends.size(); i++) {
                 trends.get(i).newDataPush();
@@ -192,15 +196,22 @@ public class Plot {
         }
     }
     public void rePaint() {
-        synchronized (objSynh) {
-            trX = new double[dataX.size()];
-            for (int i = 0; i < dataX.size(); i++) {
-                trX[i] = dataX.get(i).doubleValue() / 1.0;
+        (new Thread( ()-> {
+            synchronized (dataSynh) {
+                trX = new double[dataX.size()];
+                for (int i = 0; i < dataX.size(); i++) {
+                    trX[i] = dataX.get(i).doubleValue() / 1.0;
+                }
             }
-            clearWindow();
-            for (int i = 0; i < trends.size(); i++) {
-                trends.get(i).rePaint();
-            }
+
+        })).start();
+        clearWindow();
+        synchronized (windSynh) {
+            Platform.runLater(() -> {
+                for (int i = 0; i < trends.size(); i++) {
+                    trends.get(i).rePaint();
+                }
+            });
         }
     }
     // ---------------
