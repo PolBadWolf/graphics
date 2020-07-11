@@ -37,6 +37,10 @@ public class Plot {
     private int netN_Width = 14;
     // количество строк
     private int netN_Height = 10;
+    // начало времени отображения
+    private double time0 = 0.0;
+    // длительность отображении времени
+    private double timeLenght = 1000.0;
 
     // массив графиков
     private Vector<Trend>   trends = null;
@@ -85,8 +89,8 @@ public class Plot {
     public Color getFieldFrameLineColor() { return fieldFrameLineColor; }
     public double getFieldFrameLineWidth() { return fieldFrameLineWidth; }
     // ---------------
-    public void clearFields() {
-        Platform.runLater(() -> {
+    private void _clearFields() {
+        synchronized (windSynh) {
             gc.beginPath();
             // вертикальное поле
             {
@@ -123,48 +127,55 @@ public class Plot {
                 gc.strokePolyline(x, y, x.length);
             }
             gc.closePath();
-            gc.stroke();
-            //((Parent)canvas.getParent()).ch
-        });
+        }
+    }
+    private void _clearWindow() {
+        synchronized (windSynh) {
+            gc.beginPath();
+            // очистка окна
+            {
+                int xB = fieldWidth;
+                int xE = width - xB;
+                int yB = 0;
+                int yE = height - fieldHeight;
+                gc.setFill(windowBackColor);
+                gc.fillRect(xB, yB, xE, yE);
+            }
+            // рисование сетки
+            {
+                gc.setStroke(netLineColor);
+                gc.setLineWidth(netLineWidth);
+                double poluWidth = netLineWidth / 2;
+                int ySize = height - fieldHeight;
+                int xSize = width - fieldWidth;
+                int xN = netN_Width + 1;
+                int yN = netN_Height + 1;
+                int y, x;
+                for (int i = 1; i < (yN - 1); i++) {
+                    y = (i * ySize / (yN - 1)) + fieldHeight;
+                    moveTo(fieldWidth + poluWidth, y);
+                    lineTo(width - poluWidth, y);
+                }
+                for (int i = 1; i < (xN - 1); i++) {
+                    x = (i * xSize / (xN - 1)) + fieldWidth;
+                    moveTo(x, fieldHeight + poluWidth);
+                    lineTo(x, fieldHeight + ySize - poluWidth);
+                }
+            }
+            gc.closePath();
+        }
+    }
+    public void clearFields() {
+        (new Thread(()-> {
+            Platform.runLater(()-> {
+                _clearFields();
+            });
+        })).start();
     }
     public void clearWindow() {
-        synchronized (windSynh) {
-            Platform.runLater(() -> {
-                gc.beginPath();
-                // очистка окна
-                {
-                    int xB = fieldWidth;
-                    int xE = width - xB;
-                    int yB = 0;
-                    int yE = height - fieldHeight;
-                    gc.setFill(windowBackColor);
-                    gc.fillRect(xB, yB, xE, yE);
-                }
-                // рисование сетки
-                {
-                    gc.setStroke(netLineColor);
-                    gc.setLineWidth(netLineWidth);
-                    double poluWidth = netLineWidth / 2;
-                    int ySize = height - fieldHeight;
-                    int xSize = width - fieldWidth;
-                    int xN = netN_Width + 1;
-                    int yN = netN_Height + 1;
-                    int y, x;
-                    for (int i = 1; i < (yN - 1); i++) {
-                        y = (i * ySize / (yN - 1)) + fieldHeight;
-                        moveTo(fieldWidth + poluWidth, y);
-                        lineTo(width - poluWidth, y);
-                    }
-                    for (int i = 1; i < (xN - 1); i++) {
-                        x = (i * xSize / (xN - 1)) + fieldWidth;
-                        moveTo(x, fieldHeight + poluWidth);
-                        lineTo(x, fieldHeight + ySize - poluWidth);
-                    }
-                }
-                gc.closePath();
-                gc.stroke();
-            });
-        }
+        (new Thread(() -> {
+            Platform.runLater(() -> _clearWindow());
+        })).start();
     }
     // ---------------
     public void removeAllTrends() {
