@@ -5,6 +5,9 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class Plot {
     private Canvas  canvas = null;
@@ -51,6 +54,7 @@ public class Plot {
     private double[]        trX = null;
     private Object dataSynh = null;
     private Object windSynh = null;
+    private Object lockPaint = null;
 
     public Plot(Canvas canvas, int fieldWidth, int fieldHeight) {
         this.canvas = canvas;
@@ -306,6 +310,28 @@ public class Plot {
             gc.strokePolyline(trX, trY, trX.length);
             gc.closePath();
             gc.stroke();
+        }
+    }
+    // ---------------
+    private class MyPaint extends Thread {
+        private boolean flagOn;
+        private final BlockingQueue<byte[]> paintQueue = new ArrayBlockingQueue<>(10);
+
+        @Override
+        public void run() {
+            flagOn = true;
+            byte[] command = new byte[0];
+            while (flagOn) {
+                command = null;
+                try {
+                    command = paintQueue.poll(1, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (command == null) {
+                    continue;
+                }
+            }
         }
     }
     // ---------------
