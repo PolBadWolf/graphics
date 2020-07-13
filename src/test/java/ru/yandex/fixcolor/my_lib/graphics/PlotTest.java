@@ -15,15 +15,28 @@ public class PlotTest  {
     Thread nit = null;
     Canvas canvas = null;
     Plot plot = null;
+    public static PlotTest plotTest = null;
 
     AtomicInteger thrN = null;
 
     public static void main(String[] args) {
-        new PlotTest().clearPlot();
+        plotTest = new PlotTest();
+        plotTest.clearPlot();
+    }
+
+    public static PlotTest getPlotTest() {
+        return plotTest;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        plot.finalize();
+        super.finalize();
     }
 
     @Test
     public void clearPlot() {
+        if (plotTest == null) plotTest = this;
         // ===========
         final BlockingQueue<ArrayList<Short[]>> paintQueue = new ArrayBlockingQueue<>(10);
         Short[] sh = null;

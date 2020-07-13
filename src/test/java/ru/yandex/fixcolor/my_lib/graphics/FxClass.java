@@ -1,6 +1,7 @@
 package ru.yandex.fixcolor.my_lib.graphics;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.layout.Pane;
@@ -27,6 +28,13 @@ public class FxClass extends Application {
 
     @Override
     public void stop() throws Exception {
+        //Platform.runLater(()->{
+            try {
+                PlotTest.plotTest.finalize();
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
+        //});
         super.stop();
     }
 

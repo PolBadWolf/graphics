@@ -308,6 +308,7 @@ public class Plot {
     private class MyPaint extends Thread {
         private final BlockingQueue<DatQueue> paintQueue = new ArrayBlockingQueue<>(10);
         private Object lock = new Object();
+        private boolean onWork;
         //
         DatQueue queueClearFields = new DatQueue(ClearFields, null);
         DatQueue queueClearWindow = new DatQueue(ClearWindow, null);
@@ -319,9 +320,19 @@ public class Plot {
         public static final int RePaint     = 3;
 
         @Override
+        protected void finalize() throws Throwable {
+            onWork = false;
+            super.finalize();
+        }
+
+        @Override
         public void run() {
+            onWork = true;
             DatQueue datQueue = null;
-            while (!isInterrupted()) {
+            while (onWork) {
+                if (paintQueue == null) {
+                    System.out.println("ой");
+                }
                 try {
                     datQueue = paintQueue.poll(10, TimeUnit.MILLISECONDS);
                     if (datQueue == null)   continue;
@@ -442,4 +453,10 @@ public class Plot {
         }
     }
     // ---------------
+
+    @Override
+    protected void finalize() throws Throwable {
+        myPaint.finalize();
+        super.finalize();
+    }
 }
