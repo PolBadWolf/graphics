@@ -50,21 +50,30 @@ public class Plot {
     // массив графиков
     private Vector<Trend>   trends = null;
     private Vector<Short>   dataX = null;
+    private Short[]         newData = null;
+    private Vector<Short[]> dataGraphics = null;
     private short           dataXtmp = 0;
     private double[]        trX = null;
     private Object dataSynh = null;
     private Object windSynh = null;
     private Object lockPaint = null;
+    private MyPaint myPaint = null;
 
     public Plot(Canvas canvas, int fieldWidth, int fieldHeight) {
         this.canvas = canvas;
         this.fieldWidth = fieldWidth;
         this.fieldHeight = fieldHeight;
+        myPaint = new MyPaint();
+        myPaint.start();
         width = (int)canvas.getWidth();
         height = (int)canvas.getHeight();
         gc = canvas.getGraphicsContext2D();
         trends = new Vector<>();
         dataX = new Vector<>();
+        //
+        newData = new Short[1];
+        dataGraphics = new Vector<>();
+        //
         dataSynh = new Object();
         windSynh = new Object();
     }
@@ -178,22 +187,13 @@ public class Plot {
         gc.stroke();
     }
     public void clearFields() {
-        (new Thread(()-> {
-            synchronized (windSynh) {
-                Platform.runLater(()-> {
-                    _clearFields();
-                });
-            }
-        })).start();
+        myPaint.clearFields();
     }
     public void clearWindow() {
-        (new Thread(() -> {
-            synchronized (windSynh) {
-                Platform.runLater(() -> {
-                    _clearWindow();
-                });
-            }
-        })).start();
+        myPaint.clearWindow();
+    }
+    public void paintNet() {
+        myPaint.paintNet();
     }
     // ---------------
     public void removeAllTrends() {
@@ -201,6 +201,7 @@ public class Plot {
     }
     public void addTrend(Color lineColor, double lineWidth) {
         trends.add(new Trend(lineColor, lineWidth));
+        newData = new Short[trends.size() + 1];
     }
     public void clearAllTrends() {
         synchronized (dataSynh) {
@@ -211,25 +212,29 @@ public class Plot {
         }
     }
     public void newDataX(short dataX) {
-        synchronized (dataSynh) {
+        /*synchronized (dataSynh) {
             dataXtmp = dataX;
-        }
+        }*/
+        newData[0] = dataX;
     }
     public void newDataTrend(int n, short data) {
-        synchronized (dataSynh) {
+        /*synchronized (dataSynh) {
             trends.get(n).newData(data);
-        }
+        }*/
+        newData[n + 1] = data;
     }
     public void newDataPush() {
-        synchronized (dataSynh) {
+        /*synchronized (dataSynh) {
             dataX.add(dataXtmp);
             for (int i = 0; i < trends.size(); i++) {
                 trends.get(i).newDataPush();
             }
-        }
+        }*/
+        dataGraphics.add(newData);
+        newData = new Short[trends.size() + 1];
     }
     public void rePaint() {
-        (new Thread( ()-> {
+        /*(new Thread( ()-> {
             synchronized (dataSynh) {
                 Vector<Double> tmp = new Vector<>();
                 // начало
@@ -265,7 +270,8 @@ public class Plot {
                     }
                 });
             }
-        })).start();
+        })).start();*/
+        myPaint.rePaint(dataGraphics);
     }
     // ---------------
     private void moveTo(double x, double y) {
@@ -311,10 +317,24 @@ public class Plot {
             gc.closePath();
             gc.stroke();
         }
+        public void rePaint2(double[] x, double[] y) {
+            gc.beginPath();
+            gc.setStroke(lineColor);
+            gc.setLineWidth(lineWidth);
+            gc.strokePolyline(x, y, x.length);
+            gc.closePath();
+            gc.stroke();
+        }
     }
     // ---------------
     private class MyPaint extends Thread {
         private final BlockingQueue<DatQueue> paintQueue = new ArrayBlockingQueue<>(10);
+        private Object lock = new Object();
+        //
+        DatQueue queueClearFields = new DatQueue(ClearFields, null);
+        DatQueue queueClearWindow = new DatQueue(ClearWindow, null);
+        DatQueue queuePaintNet    = new DatQueue(PaintNet,    null);
+        //
         public static final int ClearFields = 0;
         public static final int ClearWindow = 1;
         public static final int PaintNet    = 2;
@@ -323,9 +343,9 @@ public class Plot {
         @Override
         public void run() {
             DatQueue datQueue = null;
-            while (isInterrupted()) {
+            while (!isInterrupted()) {
                 try {
-                    datQueue = paintQueue.poll(100, TimeUnit.MILLISECONDS);
+                    datQueue = paintQueue.poll(10, TimeUnit.MILLISECONDS);
                     if (datQueue == null)   continue;
                     switch (datQueue.command) {
                         case ClearFields:
@@ -338,7 +358,7 @@ public class Plot {
                             Platform.runLater(()->_paintNet());
                             break;
                         case RePaint:
-                            rePaint(datQueue.datGraph);
+                            _rePaint(datQueue.datGraph);
                             break;
                         default:
                             System.out.println("unknouw commands");
@@ -350,9 +370,8 @@ public class Plot {
             }
         }
         // ---
-        private void rePaint(Vector<Short[]> datGraph) {
+        private void _rePaint(Vector<Short[]> datGraph) {
             // нахождение индексов
-            Vector<Double> tmp = new Vector<>();
             int indexBegin = 0;
             int indexEnd = datGraph.size();
             // начальный индекс
@@ -364,27 +383,71 @@ public class Plot {
             }
             // конечный индекс
             for (int i = indexBegin; i < datGraph.size(); i++) {
-                if (datGraph.get(i)[0] >= (time0 + timeLenght)) {
-                    indexEnd = i + i;
-                    break;
+                try {
+                    double x = datGraph.get(i)[0];
+                    if (datGraph.get(i)[0] >= (time0 + timeLenght)) {
+                        indexEnd = i + i;
+                        break;
+                    }
+                }
+                catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             }
-            // зум и оффсет X
-            double k = timeLenght / (width - fieldWidth);
-            trX = new double[indexBegin - indexEnd];
-            for (int i = 0; i < trX.length; i++) {
-                trX[i] = ((dataX.get(i + timeIndexBegin).doubleValue() - time0) / k) + fieldWidth;
-                trX[i] = ((datGraph.get(i)[0 + timeIndexBegin].doubleValue() - time0) / k) + fieldWidth;
+            // создание массива
+            int lenghtMass = datGraph.get(0).length;
+            double[][] massGraphcs = new double[lenghtMass][indexEnd - indexBegin];
+            // зум и оффсет
+            double kX = timeLenght / (width - fieldWidth);
+            double kY = 1;
+            for (int i = 0; i < massGraphcs[0].length; i++) {
+                Short[] tmpShort = datGraph.get(i + indexBegin);
+                // ось X
+                massGraphcs[0][i] = ((tmpShort[0].doubleValue() - time0) / kX) + fieldWidth;
+                // ось Y
+                for (int y = 1; y < lenghtMass; y++) {
+                    massGraphcs[y][i] = ((tmpShort[y].doubleValue() - 0.0) / kY) + 0.0;
+                }
+            }
+            // обрисовка
+            Platform.runLater(()->{
+                _clearFields();
+                _clearWindow();
+                _paintNet();
+                for (int i = 1; i < lenghtMass; i++) {
+                    trends.get(i - 1).rePaint2(massGraphcs[0], massGraphcs[i]);
+                }
+            });
+        }
+        // ---
+        public void clearFields() {
+            synchronized (lock) {
+                paintQueue.add(queueClearFields);
+            }
+        }
+        public void clearWindow() {
+            synchronized (lock) {
+                paintQueue.add(queueClearWindow);
+            }
+        }
+        public void paintNet() {
+            synchronized (lock) {
+                paintQueue.add(queuePaintNet);
+            }
+        }
+        public void rePaint(Vector<Short[]> dat) {
+            synchronized (lock) {
+                paintQueue.add(new DatQueue(RePaint, dat));
             }
         }
         // ---
     }
     // ---------------
     private class DatQueue {
-        short command;
+        int command;
         Vector<Short[]> datGraph;
 
-        public DatQueue(short command, Vector<Short[]> datGraph) {
+        public DatQueue(int command, Vector<Short[]> datGraph) {
             this.command = command;
             this.datGraph = datGraph;
         }

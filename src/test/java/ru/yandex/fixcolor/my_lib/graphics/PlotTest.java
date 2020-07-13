@@ -35,6 +35,14 @@ public class PlotTest  {
         sh = new Short[] {4, 5, 6, 7};  massVec.add(sh);
         sh = new Short[] {9, 8, 6, 5};  massVec.add(sh);
         paintQueue.add(massVec);
+        double[][] grOsY = new double[3][2];
+        grOsY[0] = new double[2];
+        grOsY[1] = new double[3];
+        grOsY[2] = new double[5];
+
+        double[] p = grOsY[1];
+        int l = grOsY.length;
+
         //
         try {
             massVec = paintQueue.poll(1, TimeUnit.SECONDS);
