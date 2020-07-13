@@ -105,6 +105,7 @@ public class PlotTest  {
         plot.newDataX((short) 500);     plot.newDataTrend(0, (short)500);   plot.newDataTrend(1, (short)50);    plot.newDataPush();
         plot.newDataX((short) 900);     plot.newDataTrend(0, (short)300);   plot.newDataTrend(1, (short)550);   plot.newDataPush();
         plot.newDataX((short) 1000);    plot.newDataTrend(0, (short)150);   plot.newDataTrend(1, (short)0);     plot.newDataPush();
+        plot.setZoomY(0, 2000);
         while (nit.isAlive()) {
             for (int kX = 0; kX < 5; kX++) {
                 plot.setZoomX(0, kX * 500 + 1000);

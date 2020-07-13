@@ -4,9 +4,7 @@ import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +44,10 @@ public class Plot {
     private double time0 = 0.0;
     // длительность отображении времени
     private double timeLenght = 1000.0;
+    // начало уровня отображения
+    private double levelYbegin = 0.0;
+    // длительность уровня отображения
+    private double levelYlenght = 600.0;
 
     // массив графиков
     private ArrayList<Trend>   trends = null;
@@ -67,7 +69,6 @@ public class Plot {
         newData = new Short[1];
         dataGraphics = new ArrayList<>();
         //
-        //dataSynh = new Object();
     }
     // ---------------
     public void setFieldBackColor(Color color) { fieldBackColor = color; }
@@ -99,6 +100,10 @@ public class Plot {
     public void setZoomX(double time0, double timeLenght) {
         this.time0 = time0;
         this.timeLenght = timeLenght;
+    }
+    public void setZoomY(double levelYbegin, double levelYlenght) {
+        this.levelYbegin = levelYbegin;
+        this.levelYlenght = levelYlenght;
     }
     // ---------------
     private void _clearFields() {
@@ -196,71 +201,19 @@ public class Plot {
         newData = new Short[trends.size() + 1];
     }
     public void clearAllTrends() {
-        for (int i = 0; i < trends.size(); i++) {
-            trends.get(i).clearData();
-        }
-        //dataX.clear();
+        newData = new Short[trends.size() + 1];
     }
     public void newDataX(short dataX) {
-        /*synchronized (dataSynh) {
-            dataXtmp = dataX;
-        }*/
         newData[0] = dataX;
     }
     public void newDataTrend(int n, short data) {
-        /*synchronized (dataSynh) {
-            trends.get(n).newData(data);
-        }*/
         newData[n + 1] = data;
     }
     public void newDataPush() {
-        /*synchronized (dataSynh) {
-            dataX.add(dataXtmp);
-            for (int i = 0; i < trends.size(); i++) {
-                trends.get(i).newDataPush();
-            }
-        }*/
         dataGraphics.add(newData);
         newData = new Short[trends.size() + 1];
     }
     public void rePaint() {
-        /*(new Thread( ()-> {
-            synchronized (dataSynh) {
-                Vector<Double> tmp = new Vector<>();
-                // начало
-                for (int i = 0; i < dataX.size(); i++) {
-                    if (dataX.get(i).doubleValue() >= time0) {
-                        timeIndexBegin = i;
-                        break;
-                    }
-                }
-                // конец
-                timeIndexEnd = dataX.size();
-                for (int i = timeIndexBegin; i < dataX.size(); i++) {
-                    if (dataX.get(i).doubleValue() >= (time0 + timeLenght)) {
-                        timeIndexEnd = i + 1;
-                        break;
-                    }
-                }
-                //
-                double k = timeLenght / (width - fieldWidth);
-                trX = new double[timeIndexEnd - timeIndexBegin];
-                for (int i = 0; i < trX.length; i++) {
-                    trX[i] = ((dataX.get(i + timeIndexBegin).doubleValue() - time0) / k) + fieldWidth;
-                }
-            }
-            //
-            synchronized (windSynh) {
-                Platform.runLater(() -> {
-                    _clearFields();
-                    _clearWindow();
-                    _paintNet();
-                    for (int i = 0; i < trends.size(); i++) {
-                        trends.get(i).rePaint();
-                    }
-                });
-            }
-        })).start();*/
         myPaint.rePaint(dataGraphics);
     }
     // ---------------
@@ -274,28 +227,13 @@ public class Plot {
     private class Trend {
         private Color lineColor = null;
         private double lineWidth = 0.0;
-        Vector<Short> data = null;
-        short dataTmp = 0;
 
         public Trend(Color lineColor, double lineWidth) {
             this.lineColor = lineColor;
             this.lineWidth = lineWidth;
-            data = new Vector<>();
         }
 
-        public void clearData() {
-            data.clear();
-        }
-
-        public void newData(short data) {
-            dataTmp = data;
-        }
-
-        public void newDataPush() {
-            data.add(dataTmp);
-        }
-
-        public void rePaint2(double[] x, double[] y) {
+        public void rePaint(double[] x, double[] y) {
             gc.beginPath();
             gc.setStroke(lineColor);
             gc.setLineWidth(lineWidth);
@@ -393,7 +331,7 @@ public class Plot {
             double[][] massGraphcs = new double[lenghtMass][indexEnd - indexBegin];
             // зум и оффсет
             double kX = timeLenght / (width - fieldWidth);
-            double kY = 1;
+            double kY = levelYlenght / (height - fieldHeight);
             double vys = height - fieldHeight;
             for (int i = 0; i < massGraphcs[0].length; i++) {
                 try {
@@ -402,7 +340,7 @@ public class Plot {
                     massGraphcs[0][i] = ((tmpShort[0].doubleValue() - time0) / kX) + fieldWidth;
                     // ось Y
                     for (int y = 1; y < lenghtMass; y++) {
-                        massGraphcs[y][i] =  vys - ((tmpShort[y].doubleValue() - 0.0) / kY) + 0.0;
+                        massGraphcs[y][i] =  vys - ((tmpShort[y].doubleValue() - levelYbegin) / kY);
                     }
                 }
                 catch (Exception ex) {
@@ -415,7 +353,7 @@ public class Plot {
                 _clearWindow();
                 _paintNet();
                 for (int i = 1; i < lenghtMass; i++) {
-                    trends.get(i - 1).rePaint2(massGraphcs[0], massGraphcs[i]);
+                    trends.get(i - 1).rePaint(massGraphcs[0], massGraphcs[i]);
                 }
             });
         }
