@@ -44,21 +44,13 @@ public class Plot {
     private int netN_Height = 10;
     // начало времени отображения
     private double time0 = 0.0;
-    private int timeIndexBegin = 0;
     // длительность отображении времени
     private double timeLenght = 1000.0;
-    private int timeIndexEnd = 0;
 
     // массив графиков
-    private Vector<Trend>   trends = null;
-    private Vector<Short>   dataX = null;
-    private Short[]         newData = null;
+    private ArrayList<Trend>   trends = null;
+    private Short[]            newData = null;
     private ArrayList<Short[]> dataGraphics = null;
-    private short           dataXtmp = 0;
-    private double[]        trX = null;
-    private Object dataSynh = null;
-    private Object windSynh = null;
-    private Object lockPaint = null;
     private MyPaint myPaint = null;
 
     public Plot(Canvas canvas, int fieldWidth, int fieldHeight) {
@@ -70,14 +62,12 @@ public class Plot {
         width = (int)canvas.getWidth();
         height = (int)canvas.getHeight();
         gc = canvas.getGraphicsContext2D();
-        trends = new Vector<>();
-        dataX = new Vector<>();
+        trends = new ArrayList<>();
         //
         newData = new Short[1];
         dataGraphics = new ArrayList<>();
         //
-        dataSynh = new Object();
-        windSynh = new Object();
+        //dataSynh = new Object();
     }
     // ---------------
     public void setFieldBackColor(Color color) { fieldBackColor = color; }
@@ -206,12 +196,10 @@ public class Plot {
         newData = new Short[trends.size() + 1];
     }
     public void clearAllTrends() {
-        synchronized (dataSynh) {
-            for (int i = 0; i < trends.size(); i++) {
-                trends.get(i).clearData();
-            }
-            dataX.clear();
+        for (int i = 0; i < trends.size(); i++) {
+            trends.get(i).clearData();
         }
+        //dataX.clear();
     }
     public void newDataX(short dataX) {
         /*synchronized (dataSynh) {
@@ -307,18 +295,6 @@ public class Plot {
             data.add(dataTmp);
         }
 
-        public void rePaint() {
-            double[] trY = new double[trX.length];
-            for (int i = 0; i < trX.length; i++) {
-                trY[i] = height - (data.get(i + timeIndexBegin).doubleValue() / 1.0);
-            }
-            gc.beginPath();
-            gc.setStroke(lineColor);
-            gc.setLineWidth(lineWidth);
-            gc.strokePolyline(trX, trY, trX.length);
-            gc.closePath();
-            gc.stroke();
-        }
         public void rePaint2(double[] x, double[] y) {
             gc.beginPath();
             gc.setStroke(lineColor);
