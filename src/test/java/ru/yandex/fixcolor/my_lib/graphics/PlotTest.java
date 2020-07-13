@@ -5,6 +5,10 @@ import javafx.scene.paint.Color;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PlotTest  {
@@ -17,10 +21,34 @@ public class PlotTest  {
     @Test
     public void clearPlot() {
         // ===========
-        Double[] v1 = {1,2,3,4};
-        Object[] v2 = v1;
-        Double[] v3 = (Double[]) v2;
-        v3.
+        final BlockingQueue<Vector<Short[]>> paintQueue = new ArrayBlockingQueue<>(10);
+        Short[] sh = null;
+        Short[] sh0 = null;
+        Short[] sh1 = null;
+        Vector<Short[]> massVec = null;
+        //
+        massVec = new Vector<>();
+        sh = new Short[] {0, 1, 2, 3};  massVec.add(sh);
+        sh = new Short[] {2, 3, 4, 5};  massVec.add(sh);
+        paintQueue.add(massVec);
+        massVec = new Vector<>();
+        sh = new Short[] {4, 5, 6, 7};  massVec.add(sh);
+        sh = new Short[] {9, 8, 6, 5};  massVec.add(sh);
+        paintQueue.add(massVec);
+        //
+        try {
+            massVec = paintQueue.poll(1, TimeUnit.SECONDS);
+            sh0 = massVec.get(0); sh1 = massVec.get(1);
+            massVec = paintQueue.poll(1, TimeUnit.SECONDS);
+            sh0 = massVec.get(0); sh1 = massVec.get(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        sh0 = massVec.get(0);
+        sh1 = massVec.get(1);
+
+
         // ===========
         nit = new Thread( ()->{
             FxClass.main(new String[0]);

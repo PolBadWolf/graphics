@@ -314,24 +314,79 @@ public class Plot {
     }
     // ---------------
     private class MyPaint extends Thread {
-        private boolean flagOn;
-        private final BlockingQueue<byte[]> paintQueue = new ArrayBlockingQueue<>(10);
+        private final BlockingQueue<DatQueue> paintQueue = new ArrayBlockingQueue<>(10);
+        public static final int ClearFields = 0;
+        public static final int ClearWindow = 1;
+        public static final int PaintNet    = 2;
+        public static final int RePaint     = 3;
 
         @Override
         public void run() {
-            flagOn = true;
-            byte[] command = new byte[0];
-            while (flagOn) {
-                command = null;
+            DatQueue datQueue = null;
+            while (isInterrupted()) {
                 try {
-                    command = paintQueue.poll(1, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if (command == null) {
-                    continue;
+                    datQueue = paintQueue.poll(100, TimeUnit.MILLISECONDS);
+                    if (datQueue == null)   continue;
+                    switch (datQueue.command) {
+                        case ClearFields:
+                            Platform.runLater(()->_clearFields());
+                            break;
+                        case ClearWindow:
+                            Platform.runLater(()->_clearWindow());
+                            break;
+                        case PaintNet:
+                            Platform.runLater(()->_paintNet());
+                            break;
+                        case RePaint:
+                            rePaint(datQueue.datGraph);
+                            break;
+                        default:
+                            System.out.println("unknouw commands");
+                            continue;
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             }
+        }
+        // ---
+        private void rePaint(Vector<Short[]> datGraph) {
+            // нахождение индексов
+            Vector<Double> tmp = new Vector<>();
+            int indexBegin = 0;
+            int indexEnd = datGraph.size();
+            // начальный индекс
+            for (int i = 0; i < datGraph.size(); i++) {
+                if (datGraph.get(i)[0] >= time0) {
+                    indexBegin = i;
+                    break;
+                }
+            }
+            // конечный индекс
+            for (int i = indexBegin; i < datGraph.size(); i++) {
+                if (datGraph.get(i)[0] >= (time0 + timeLenght)) {
+                    indexEnd = i + i;
+                    break;
+                }
+            }
+            // зум и оффсет X
+            double k = timeLenght / (width - fieldWidth);
+            trX = new double[indexBegin - indexEnd];
+            for (int i = 0; i < trX.length; i++) {
+                trX[i] = ((dataX.get(i + timeIndexBegin).doubleValue() - time0) / k) + fieldWidth;
+                trX[i] = ((datGraph.get(i)[0 + timeIndexBegin].doubleValue() - time0) / k) + fieldWidth;
+            }
+        }
+        // ---
+    }
+    // ---------------
+    private class DatQueue {
+        short command;
+        Vector<Short[]> datGraph;
+
+        public DatQueue(short command, Vector<Short[]> datGraph) {
+            this.command = command;
+            this.datGraph = datGraph;
         }
     }
     // ---------------
