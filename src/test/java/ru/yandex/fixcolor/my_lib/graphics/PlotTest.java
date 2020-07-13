@@ -4,7 +4,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.paint.Color;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -18,20 +18,24 @@ public class PlotTest  {
 
     AtomicInteger thrN = null;
 
+    public static void main(String[] args) {
+        new PlotTest().clearPlot();
+    }
+
     @Test
     public void clearPlot() {
         // ===========
-        final BlockingQueue<Vector<Short[]>> paintQueue = new ArrayBlockingQueue<>(10);
+        final BlockingQueue<ArrayList<Short[]>> paintQueue = new ArrayBlockingQueue<>(10);
         Short[] sh = null;
         Short[] sh0 = null;
         Short[] sh1 = null;
-        Vector<Short[]> massVec = null;
+        ArrayList<Short[]> massVec = null;
         //
-        massVec = new Vector<>();
+        massVec = new ArrayList<>();
         sh = new Short[] {0, 1, 2, 3};  massVec.add(sh);
         sh = new Short[] {2, 3, 4, 5};  massVec.add(sh);
         paintQueue.add(massVec);
-        massVec = new Vector<>();
+        massVec = new ArrayList<>();
         sh = new Short[] {4, 5, 6, 7};  massVec.add(sh);
         sh = new Short[] {9, 8, 6, 5};  massVec.add(sh);
         paintQueue.add(massVec);

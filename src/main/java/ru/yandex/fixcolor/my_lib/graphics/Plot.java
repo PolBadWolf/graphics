@@ -4,6 +4,8 @@ import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -51,7 +53,7 @@ public class Plot {
     private Vector<Trend>   trends = null;
     private Vector<Short>   dataX = null;
     private Short[]         newData = null;
-    private Vector<Short[]> dataGraphics = null;
+    private ArrayList<Short[]> dataGraphics = null;
     private short           dataXtmp = 0;
     private double[]        trX = null;
     private Object dataSynh = null;
@@ -72,7 +74,7 @@ public class Plot {
         dataX = new Vector<>();
         //
         newData = new Short[1];
-        dataGraphics = new Vector<>();
+        dataGraphics = new ArrayList<>();
         //
         dataSynh = new Object();
         windSynh = new Object();
@@ -357,8 +359,10 @@ public class Plot {
                         case PaintNet:
                             Platform.runLater(()->_paintNet());
                             break;
-                        case RePaint:
-                            _rePaint(datQueue.datGraph);
+                        case RePaint: {
+                            ArrayList<Short[]> tmp = datQueue.datGraph;
+                            _rePaint(tmp);
+                        }
                             break;
                         default:
                             System.out.println("unknouw commands");
@@ -370,10 +374,12 @@ public class Plot {
             }
         }
         // ---
-        private void _rePaint(Vector<Short[]> datGraph) {
+        private void _rePaint(ArrayList<Short[]> datGraph) {
             // нахождение индексов
             int indexBegin = 0;
-            int indexEnd = datGraph.size();
+            int indexEnd = 0;
+            int fl = datGraph.size();
+            indexEnd = datGraph.size();
             // начальный индекс
             for (int i = 0; i < datGraph.size(); i++) {
                 if (datGraph.get(i)[0] >= time0) {
@@ -386,7 +392,8 @@ public class Plot {
                 try {
                     double x = datGraph.get(i)[0];
                     if (datGraph.get(i)[0] >= (time0 + timeLenght)) {
-                        indexEnd = i + i;
+                        fl = 1;
+                        indexEnd = i + 1;
                         break;
                     }
                 }
@@ -400,13 +407,19 @@ public class Plot {
             // зум и оффсет
             double kX = timeLenght / (width - fieldWidth);
             double kY = 1;
+            double vys = height - fieldHeight;
             for (int i = 0; i < massGraphcs[0].length; i++) {
-                Short[] tmpShort = datGraph.get(i + indexBegin);
-                // ось X
-                massGraphcs[0][i] = ((tmpShort[0].doubleValue() - time0) / kX) + fieldWidth;
-                // ось Y
-                for (int y = 1; y < lenghtMass; y++) {
-                    massGraphcs[y][i] = ((tmpShort[y].doubleValue() - 0.0) / kY) + 0.0;
+                try {
+                    Short[] tmpShort = datGraph.get(i + indexBegin);
+                    // ось X
+                    massGraphcs[0][i] = ((tmpShort[0].doubleValue() - time0) / kX) + fieldWidth;
+                    // ось Y
+                    for (int y = 1; y < lenghtMass; y++) {
+                        massGraphcs[y][i] =  vys - ((tmpShort[y].doubleValue() - 0.0) / kY) + 0.0;
+                    }
+                }
+                catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             }
             // обрисовка
@@ -435,7 +448,7 @@ public class Plot {
                 paintQueue.add(queuePaintNet);
             }
         }
-        public void rePaint(Vector<Short[]> dat) {
+        public void rePaint(ArrayList<Short[]> dat) {
             synchronized (lock) {
                 paintQueue.add(new DatQueue(RePaint, dat));
             }
@@ -445,9 +458,9 @@ public class Plot {
     // ---------------
     private class DatQueue {
         int command;
-        Vector<Short[]> datGraph;
+        ArrayList<Short[]> datGraph;
 
-        public DatQueue(int command, Vector<Short[]> datGraph) {
+        public DatQueue(int command, ArrayList<Short[]> datGraph) {
             this.command = command;
             this.datGraph = datGraph;
         }
